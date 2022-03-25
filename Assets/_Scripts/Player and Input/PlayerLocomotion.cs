@@ -22,7 +22,7 @@ namespace SoulsLike
         [SerializeField]
         float _rotationSpeed = 10;
 
-        void Start()
+        void Awake()
         {
             _rigidbody = GetComponent<Rigidbody>();
             _inputHandler = GetComponent<InputHandler>();
@@ -39,7 +39,19 @@ namespace SoulsLike
             float delta = Time.deltaTime;
 
             _inputHandler.TickInput(delta);
+            HandleMovement(delta);
+            HandleRollingAndSprinting(delta);
+            HandleDance(delta);
+            
+        }
 
+        #region Movement
+
+        Vector3 _normalVector;
+        Vector3 _targetPosition;
+
+        public void HandleMovement(float delta)
+        {
             _moveDirection = _cameraObject.forward * _inputHandler._vertical;
             _moveDirection += _cameraObject.right * _inputHandler._horizontal;
             _moveDirection.Normalize();
@@ -56,11 +68,6 @@ namespace SoulsLike
             if (_animatorHandler._canRotate)
                 HandleRotation(delta);
         }
-
-        #region Movement
-
-        Vector3 _normalVector;
-        Vector3 _targetPosition;
 
         private void HandleRotation(float delta)
         {
@@ -82,6 +89,42 @@ namespace SoulsLike
             Quaternion _targetRotation = Quaternion.Slerp(_myTransform.rotation, tr, rs * delta);
 
             _myTransform.rotation = _targetRotation;
+        }
+
+        public void HandleRollingAndSprinting(float delta)
+        {
+            if (_animatorHandler._anim.GetBool("isInteracting"))
+                return;
+            
+            if (_inputHandler._rollFlag)
+            {
+                _moveDirection = _cameraObject.forward * _inputHandler._vertical;
+                _moveDirection += _cameraObject.right * _inputHandler._horizontal;
+
+                if (_inputHandler._moveAmount > 0)
+                {
+                    _animatorHandler.PlayTargetAnimation("Rolling", true);
+                    _moveDirection.y = 0;
+                    Quaternion rollRotation = Quaternion.LookRotation(_moveDirection);
+                    _myTransform.rotation = rollRotation;
+                }
+                else
+                {
+                    _animatorHandler.PlayTargetAnimation("Backstep", true);
+                }
+            }
+        }
+
+        public void HandleDance(float delta)
+        {
+            if (_animatorHandler._anim.GetBool("isInteracting"))
+                return;
+
+            if (_inputHandler._danceFlag)
+            {
+                _animatorHandler.PlayTargetAnimation("Dance", true);
+                _moveDirection.y = 0;
+            }
         }
 
         #endregion

@@ -12,6 +12,11 @@ namespace SoulsLike
         public float _mouseX { get; private set; }
         public float _mouseY { get; private set; }
 
+        public bool b_Input { get; private set; }
+        public bool _rollFlag { get; private set; }
+        public bool _danceFlag { get; private set; }
+        public bool _isInteracting { get; private set; }
+
         PlayerControls _inputActions;
         CameraHandler _cameraHandler;
 
@@ -30,7 +35,7 @@ namespace SoulsLike
             if (_cameraHandler != null)
             {
                 _cameraHandler.FollowTarget(delta);
-                _cameraHandler.HandleCamaraRotation(delta, _mouseX, _mouseY);
+                _cameraHandler.HandleCameraRotation(delta, _mouseX, _mouseY);
             }
         }
 
@@ -54,6 +59,8 @@ namespace SoulsLike
         public void TickInput(float delta)
         {
             MoveInput(delta);
+            HandleRollInput(delta);
+            HandleDanceInput(delta);
         }
 
         private void MoveInput(float delta)
@@ -65,5 +72,29 @@ namespace SoulsLike
             _mouseX = _cameraInput.x;
             _mouseY = _cameraInput.y;
         }
+
+        private void HandleRollInput(float delta)
+        {
+            b_Input = _inputActions.PlayerActions.Roll.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
+
+            if (b_Input)
+            {
+                _rollFlag = true;
+            }
+        }
+
+        private void HandleDanceInput(float delta)
+        {
+            b_Input = _inputActions.PlayerActions.Dance.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
+
+            if (b_Input)
+            {
+                _danceFlag = true;
+            }
+        }
+
+        public void SetIsInteracting(bool isInteracting) => _isInteracting = isInteracting;
+        public void ResetRollFlag() => _rollFlag = false;
+        public void ResetDanceFlag() => _danceFlag = false;
     }
 }
