@@ -171,15 +171,6 @@
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
-                },
-                {
-                    "name": "Dance",
-                    "type": "Button",
-                    "id": "d0c63595-76eb-4b90-ad20-987733bc6ca8",
-                    "expectedControlType": "Button",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
                 }
             ],
             "bindings": [
@@ -202,17 +193,6 @@
                     "processors": "",
                     "groups": "",
                     "action": "Roll",
-                    "isComposite": false,
-                    "isPartOfComposite": false
-                },
-                {
-                    "name": "",
-                    "id": "13213356-b278-4ab4-a62b-5cd3ead1eee9",
-                    "path": "<Keyboard>/k",
-                    "interactions": "",
-                    "processors": "",
-                    "groups": "",
-                    "action": "Dance",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

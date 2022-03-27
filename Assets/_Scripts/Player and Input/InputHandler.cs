@@ -6,39 +6,28 @@ namespace SoulsLike
 {
     public class InputHandler : MonoBehaviour
     {
+        public delegate void RaiseMovementFlag(MovementFlag flag);
+        public static event RaiseMovementFlag MovementFlagRaised;
+
+        public delegate void RaiseActionFlag(ActionFlag flag);
+        public static event RaiseActionFlag ActionFlagRaised;
+
         public float _horizontal { get; private set; }
         public float _vertical { get; private set; }
         public float _moveAmount { get; private set; }
         public float _mouseX { get; private set; }
         public float _mouseY { get; private set; }
 
-        public bool b_Input { get; private set; }
-        public bool _rollFlag { get; private set; }
-        public bool _danceFlag { get; private set; }
-        public bool _isInteracting { get; private set; }
+        public bool _rollInput { get; private set; }
+
+        float _rollInputTimer = 0.0f;
 
         PlayerControls _inputActions;
-        CameraHandler _cameraHandler;
 
         Vector2 _movementInput;
         Vector2 _cameraInput;
 
-        private void Awake()
-        {
-            _cameraHandler = CameraHandler._singleton;
-        }
-
-        private void FixedUpdate()
-        {
-            float delta = Time.fixedDeltaTime;
-
-            if (_cameraHandler != null)
-            {
-                _cameraHandler.FollowTarget(delta);
-                _cameraHandler.HandleCameraRotation(delta, _mouseX, _mouseY);
-            }
-        }
-
+        #region Input System Setup
         public void OnEnable()
         {
             if (_inputActions == null)
@@ -55,12 +44,12 @@ namespace SoulsLike
         {
             _inputActions.Disable();
         }
+        #endregion
 
         public void TickInput(float delta)
         {
             MoveInput(delta);
             HandleRollInput(delta);
-            HandleDanceInput(delta);
         }
 
         private void MoveInput(float delta)
@@ -71,30 +60,68 @@ namespace SoulsLike
 
             _mouseX = _cameraInput.x;
             _mouseY = _cameraInput.y;
+
+            if(_moveAmount != 0)
+            {
+                InvokeFlag(MovementFlag.Move);
+            }
+            else
+            {
+                InvokeFlag(MovementFlag.Idle);
+            }
         }
 
         private void HandleRollInput(float delta)
         {
-            b_Input = _inputActions.PlayerActions.Roll.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
+            _rollInput = _inputActions.PlayerActions.Roll.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
 
-            if (b_Input)
+            if (_rollInput)
             {
-                _rollFlag = true;
+                _rollInputTimer += delta;
+            }
+            else
+            {
+                if (_rollInputTimer > 0 && _rollInputTimer < 0.5f)
+                {
+                    if (IsMoving())
+                    {
+                        InvokeFlag(ActionFlag.Roll);
+                    }
+                    else
+                    {
+                        InvokeFlag(ActionFlag.Backstep);
+                    }
+                }
+
+                _rollInputTimer = 0;
+            }
+
+            if (_rollInputTimer >= 0.5f)
+            {
+                InvokeFlag(MovementFlag.Sprint);
             }
         }
 
-        private void HandleDanceInput(float delta)
+        private bool IsMoving()
         {
-            b_Input = _inputActions.PlayerActions.Dance.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
-
-            if (b_Input)
-            {
-                _danceFlag = true;
-            }
+            return _moveAmount != 0; 
         }
 
-        public void SetIsInteracting(bool isInteracting) => _isInteracting = isInteracting;
-        public void ResetRollFlag() => _rollFlag = false;
-        public void ResetDanceFlag() => _danceFlag = false;
+        public void InvokeFlag(MovementFlag f) => MovementFlagRaised?.Invoke(f);
+        public void InvokeFlag(ActionFlag f) => ActionFlagRaised?.Invoke(f);
+    }
+
+    public enum MovementFlag
+    {
+        Idle,
+        Move,
+        Sprint
+    }
+
+    public enum ActionFlag
+    {
+        None,
+        Roll,
+        Backstep
     }
 }

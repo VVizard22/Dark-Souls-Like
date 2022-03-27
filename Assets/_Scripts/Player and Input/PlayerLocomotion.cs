@@ -6,8 +6,8 @@ namespace SoulsLike
 {
     public class PlayerLocomotion : MonoBehaviour
     {
+        PlayerManager _playerManager;
         Transform _cameraObject;
-        InputHandler _inputHandler;
         Vector3 _moveDirection;
 
         public Transform _myTransform { get; private set; }
@@ -20,12 +20,16 @@ namespace SoulsLike
         [SerializeField]
         float _movementSpeed = 5;
         [SerializeField]
+        float _sprintSpeed = 7;
+        [SerializeField]
         float _rotationSpeed = 10;
+
+        float _moveAmount = 0;
 
         void Awake()
         {
+            _playerManager = GetComponent<PlayerManager>();
             _rigidbody = GetComponent<Rigidbody>();
-            _inputHandler = GetComponent<InputHandler>();
             _cameraObject = Camera.main.transform;
             _myTransform = transform;
             _animatorHandler = GetComponentInChildren<AnimatorHandler>();
@@ -34,48 +38,50 @@ namespace SoulsLike
         
         }
 
-        public void Update()
-        {
-            float delta = Time.deltaTime;
-
-            _inputHandler.TickInput(delta);
-            HandleMovement(delta);
-            HandleRollingAndSprinting(delta);
-            HandleDance(delta);
-            
-        }
-
         #region Movement
 
         Vector3 _normalVector;
         Vector3 _targetPosition;
 
-        public void HandleMovement(float delta)
+        public void HandleMovement(float delta, float horMove, float verMove)
         {
-            _moveDirection = _cameraObject.forward * _inputHandler._vertical;
-            _moveDirection += _cameraObject.right * _inputHandler._horizontal;
+            if (_playerManager._disableMovement.Contains(_playerManager.ActionState))
+                return;
+
+            _moveDirection = _cameraObject.forward * verMove;
+            _moveDirection += _cameraObject.right * horMove;
             _moveDirection.Normalize();
             _moveDirection.y = 0;
 
             float speed = _movementSpeed;
+            bool isSprinting = _playerManager.MovementState == MovementFlag.Sprint;
+
+            if (isSprinting)
+                speed = _sprintSpeed;
+
             _moveDirection *= speed;
+
+            _moveAmount = Mathf.Clamp01(Mathf.Abs(horMove) + Mathf.Abs(verMove));
 
             Vector3 _projectedVelocity = Vector3.ProjectOnPlane(_moveDirection, _normalVector);
             _rigidbody.velocity = _projectedVelocity;
 
-            _animatorHandler.UpdateAnimatorValues(_inputHandler._moveAmount, 0);
+            _animatorHandler.UpdateAnimatorValues(_moveAmount, 0, isSprinting);
 
             if (_animatorHandler._canRotate)
-                HandleRotation(delta);
+                HandleRotation(delta, horMove, verMove);
         }
 
-        private void HandleRotation(float delta)
+        private void HandleRotation(float delta, float horMove, float verMove)
         {
-            Vector3 _targetDir = Vector3.zero;
-            float _moveOverride = _inputHandler._moveAmount;
+            if (_playerManager._disableRotation.Contains(_playerManager.ActionState))
+                return;
 
-            _targetDir = _cameraObject.forward * _inputHandler._vertical;
-            _targetDir += _cameraObject.right * _inputHandler._horizontal;
+            Vector3 _targetDir = Vector3.zero;
+            float _moveOverride = _moveAmount;
+
+            _targetDir = _cameraObject.forward * verMove;
+            _targetDir += _cameraObject.right * horMove;
 
             _targetDir.Normalize();
             _targetDir.y = 0;
@@ -91,42 +97,26 @@ namespace SoulsLike
             _myTransform.rotation = _targetRotation;
         }
 
-        public void HandleRollingAndSprinting(float delta)
+        public void HandleRollingAndSprinting(float delta, float horMove, float verMove)
         {
-            if (_animatorHandler._anim.GetBool("isInteracting"))
-                return;
-            
-            if (_inputHandler._rollFlag)
-            {
-                _moveDirection = _cameraObject.forward * _inputHandler._vertical;
-                _moveDirection += _cameraObject.right * _inputHandler._horizontal;
-
-                if (_inputHandler._moveAmount > 0)
-                {
-                    _animatorHandler.PlayTargetAnimation("Rolling", true);
-                    _moveDirection.y = 0;
-                    Quaternion rollRotation = Quaternion.LookRotation(_moveDirection);
-                    _myTransform.rotation = rollRotation;
-                }
-                else
-                {
-                    _animatorHandler.PlayTargetAnimation("Backstep", true);
-                }
-            }
-        }
-
-        public void HandleDance(float delta)
-        {
-            if (_animatorHandler._anim.GetBool("isInteracting"))
+            if (_animatorHandler._anim.GetBool("isInteracting") || _playerManager.ActionState == ActionFlag.None)
                 return;
 
-            if (_inputHandler._danceFlag)
+
+            _moveDirection = _cameraObject.forward * verMove;
+            _moveDirection += _cameraObject.right * horMove;
+
+            if (_playerManager.ActionState == ActionFlag.Roll)
             {
-                _animatorHandler.PlayTargetAnimation("Dance", true);
+                _animatorHandler.PlayTargetAnimation("Rolling", true);
                 _moveDirection.y = 0;
+                Quaternion rollRotation = Quaternion.LookRotation(_moveDirection);
+                _myTransform.rotation = rollRotation;
             }
-        }
 
+            if (_playerManager.ActionState == ActionFlag.Backstep)
+                _animatorHandler.PlayTargetAnimation("Backstep", true);
+        }
         #endregion
     }
 }
