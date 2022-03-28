@@ -38,6 +38,15 @@ namespace SoulsLike
         
         }
 
+        void OnEnable()
+        {
+            InputHandler.ActionFlagRaised += HandleFlag;
+        }
+
+        void OnDisable()
+        {
+            InputHandler.ActionFlagRaised -= HandleFlag;
+        }
         #region Movement
 
         Vector3 _normalVector;
@@ -97,7 +106,7 @@ namespace SoulsLike
             _myTransform.rotation = _targetRotation;
         }
 
-        public void HandleRollingAndSprinting(float delta, float horMove, float verMove)
+        public void HandleRollingAndSprinting(float horMove, float verMove)
         {
             if (_animatorHandler._anim.GetBool("isInteracting") || _playerManager.ActionState == ActionFlag.None)
                 return;
@@ -117,6 +126,27 @@ namespace SoulsLike
             if (_playerManager.ActionState == ActionFlag.Backstep)
                 _animatorHandler.PlayTargetAnimation("Backstep", true);
         }
+
+        public void HandleDance()
+        {
+            if (_animatorHandler._anim.GetBool("isInteracting") || _playerManager.ActionState == ActionFlag.None)
+                return;
+
+            if (_playerManager.ActionState == ActionFlag.Dance)
+                _animatorHandler.PlayTargetAnimation("Dance", true);
+        }
         #endregion
+
+        public void HandleFlag(ActionFlag f)
+        {
+            switch (f)
+            {
+                case ActionFlag.Dance:
+                    HandleDance();
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 }

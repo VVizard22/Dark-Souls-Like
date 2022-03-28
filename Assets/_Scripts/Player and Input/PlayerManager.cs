@@ -58,7 +58,7 @@ namespace SoulsLike
             #region PlayerLocomotion Methods
             _inputHandler.TickInput(delta);
             _playerLocomotion.HandleMovement(delta, _inputHandler._horizontal, _inputHandler._vertical);
-            _playerLocomotion.HandleRollingAndSprinting(delta, _inputHandler._horizontal, _inputHandler._vertical);
+            _playerLocomotion.HandleRollingAndSprinting(_inputHandler._horizontal, _inputHandler._vertical);
             #endregion
 
 
@@ -71,6 +71,16 @@ namespace SoulsLike
             
             MovementState = f;
         }
-        public void FlagHandle(ActionFlag f) => ActionState = f;
+        public void FlagHandle(ActionFlag f)
+        {
+            if (f == ActionFlag.None)
+            {
+                ActionState = f;
+                return;
+            }
+            else if (ActionState != ActionFlag.None)
+                return;
+            ActionState = f;
+        }
     }
 }

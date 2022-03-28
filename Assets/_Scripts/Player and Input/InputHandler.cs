@@ -19,6 +19,7 @@ namespace SoulsLike
         public float _mouseY { get; private set; }
 
         public bool _rollInput { get; private set; }
+        public bool _danceInput { get; private set; }
 
         float _rollInputTimer = 0.0f;
 
@@ -50,6 +51,7 @@ namespace SoulsLike
         {
             MoveInput(delta);
             HandleRollInput(delta);
+            HandleDanceInput();
         }
 
         private void MoveInput(float delta)
@@ -102,6 +104,14 @@ namespace SoulsLike
             }
         }
 
+        private void HandleDanceInput()
+        {
+            _danceInput = _inputActions.PlayerActions.Dance.phase == UnityEngine.InputSystem.InputActionPhase.Performed;
+
+            if (_danceInput)
+                InvokeFlag(ActionFlag.Dance);
+        }
+
         private bool IsMoving()
         {
             return _moveAmount != 0; 
@@ -122,6 +132,7 @@ namespace SoulsLike
     {
         None,
         Roll,
-        Backstep
+        Backstep,
+        Dance
     }
 }
